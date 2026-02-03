@@ -18,13 +18,14 @@ const modal = document.getElementById("planModal");
 const employeeSelect = document.getElementById("employeeSelect");
 const halfDayCheckbox = document.getElementById("halfDayCheckbox");
 const saveShiftBtn = document.getElementById("saveShift");
-const closeModalBtn = document.getElementById("cancelShift"); // ✅ klopt met HTML
+const closeModalBtn = document.getElementById("closeModal");
 
 /* ===============================
    INIT
 ================================ */
 updateWeekLabel();
 loadWeek();
+loadEmployees();
 
 /* ===============================
    WEEK NAVIGATIE
@@ -54,11 +55,11 @@ function updateWeekLabel() {
 }
 
 /* ===============================
-   MEDEWERKERS LADEN (SUPABASE)
+   MEDEWERKERS LADEN
 ================================ */
 async function loadEmployees() {
   const { data, error } = await supabase
-    .from("medewerkers")           // ✅ JUISTE TABEL
+    .from("medewerkers")
     .select("id, name")
     .eq("actief", true)
     .order("name");
@@ -68,8 +69,7 @@ async function loadEmployees() {
     return;
   }
 
-  employeeSelect.innerHTML = `<option value="">Kies medewerker</option>`;
-
+  employeeSelect.innerHTML = "";
   data.forEach(emp => {
     const opt = document.createElement("option");
     opt.value = emp.id;
@@ -146,17 +146,12 @@ function calculateTotals(shifts) {
    PLUSJE → MODAL
 ================================ */
 document.querySelectorAll(".add-btn").forEach(btn => {
-  btn.onclick = async () => {
+  btn.onclick = () => {
     activeDay = btn.closest(".day-column").dataset.day;
-
-    await loadEmployees(); // ✅ HIER MOET HIJ ZITTEN
     modal.style.display = "flex";
   };
 });
 
-/* ===============================
-   MODAL SLUITEN
-================================ */
 closeModalBtn.onclick = () => {
   modal.style.display = "none";
   halfDayCheckbox.checked = false;
