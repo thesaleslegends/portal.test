@@ -1,195 +1,201 @@
-import { supabase } from "../../services/supabase.js";
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <title>Planning – Backend</title>
 
-/* ===============================
-   WEEK STATE
-================================ */
-let currentYear = 2026;
-let currentWeek = 5;
-let activeDay = null;
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f7f7f7;
+    }
 
-/* ===============================
-   DOM
-================================ */
-const weekLabel = document.getElementById("weekLabel");
-const prevWeekBtn = document.getElementById("prevWeek");
-const nextWeekBtn = document.getElementById("nextWeek");
+    h2 {
+      margin-bottom: 10px;
+    }
 
-const modal = document.getElementById("planModal");
-const employeeSelect = document.getElementById("employeeSelect");
-const halfDayCheckbox = document.getElementById("halfDayCheckbox");
-const saveShiftBtn = document.getElementById("saveShift");
-const closeModalBtn = document.getElementById("cancelShift"); // ✅ klopt met HTML
+    .week-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
 
-/* ===============================
-   INIT
-================================ */
-updateWeekLabel();
-loadWeek();
+    .week-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 12px;
+    }
 
-/* ===============================
-   WEEK NAVIGATIE
-================================ */
-prevWeekBtn.onclick = () => {
-  currentWeek--;
-  if (currentWeek < 1) {
-    currentWeek = 52;
-    currentYear--;
-  }
-  updateWeekLabel();
-  loadWeek();
-};
+    .day-column {
+      background: #fff;
+      border-radius: 6px;
+      padding: 8px;
+      min-height: 260px;
+      display: flex;
+      flex-direction: column;
+    }
 
-nextWeekBtn.onclick = () => {
-  currentWeek++;
-  if (currentWeek > 52) {
-    currentWeek = 1;
-    currentYear++;
-  }
-  updateWeekLabel();
-  loadWeek();
-};
+    .day-column h3 {
+      text-align: center;
+      margin: 4px 0 8px;
+      font-size: 15px;
+    }
 
-function updateWeekLabel() {
-  weekLabel.innerText = `Week ${currentWeek} (${currentYear})`;
-}
+    .day-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      flex-grow: 1;
+    }
 
-/* ===============================
-   MEDEWERKERS LADEN (SUPABASE)
-================================ */
-async function loadEmployees() {
-  const { data, error } = await supabase
-    .from("medewerkers")           // ✅ JUISTE TABEL
-    .select("id, name")
-    .eq("actief", true)
-    .order("name");
+    .day-list li {
+      background: #f2f2f2;
+      margin-bottom: 4px;
+      padding: 4px 6px;
+      border-radius: 4px;
+      font-size: 14px;
+    }
 
-  if (error) {
-    console.error("Fout bij laden medewerkers:", error);
-    return;
-  }
+    .add-btn {
+      margin-top: 6px;
+      padding: 6px;
+      cursor: pointer;
+    }
 
-  employeeSelect.innerHTML = `<option value="">Kies medewerker</option>`;
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 12px;
+      margin-top: 10px;
+    }
 
-  data.forEach(emp => {
-    const opt = document.createElement("option");
-    opt.value = emp.id;
-    opt.textContent = emp.name;
-    employeeSelect.appendChild(opt);
-  });
-}
+    .summary-cell {
+      background: #eaeaea;
+      text-align: center;
+      padding: 6px;
+      font-weight: bold;
+      border-radius: 4px;
+    }
 
-/* ===============================
-   WEEK LADEN
-================================ */
-async function loadWeek() {
-  document.querySelectorAll(".day-list").forEach(l => l.innerHTML = "");
-  document.querySelectorAll(".summary-cell").forEach(c => c.innerText = "0");
-  document.getElementById("weekTotal").innerText = "0";
+    .week-total {
+      margin-top: 10px;
+      font-size: 15px;
+    }
 
-  const { data: shifts, error } = await supabase
-    .from("planning")
-    .select(`
-      id,
-      day_of_week,
-      half_day,
-      medewerkers ( name )
-    `)
-    .eq("year", currentYear)
-    .eq("week_number", currentWeek);
+    .actions {
+      margin-top: 20px;
+      display: flex;
+      gap: 12px;
+    }
 
-  if (error) {
-    console.error("Fout bij laden planning:", error);
-    return;
-  }
+    .primary-btn {
+      background: #007bff;
+      color: #fff;
+      border: none;
+      padding: 10px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
 
-  renderWeek(shifts);
-  calculateTotals(shifts);
-}
+    .secondary-btn {
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 10px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
 
-/* ===============================
-   RENDEREN
-================================ */
-function renderWeek(shifts) {
-  shifts.forEach(shift => {
-    const list = document.querySelector(
-      `.day-column[data-day="${shift.day_of_week}"] .day-list`
-    );
-    if (!list) return;
+    /* MODAL */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+    }
 
-    const li = document.createElement("li");
-    li.textContent =
-      shift.medewerkers?.name + (shift.half_day ? " (½)" : "");
+    .modal {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      width: 320px;
+    }
 
-    list.appendChild(li);
-  });
-}
+    .modal label {
+      display: block;
+      margin-top: 10px;
+      font-size: 14px;
+    }
 
-/* ===============================
-   TOTALEN
-================================ */
-function calculateTotals(shifts) {
-  const totals = {1:0,2:0,3:0,4:0,5:0,6:0,7:0};
+    .modal select {
+      width: 100%;
+      padding: 6px;
+      margin-top: 4px;
+    }
+  </style>
+</head>
 
-  shifts.forEach(s => {
-    totals[s.day_of_week] += s.half_day ? 0.5 : 1;
-  });
+<body>
 
-  document.querySelectorAll(".summary-cell").forEach((c, i) => {
-    c.innerText = totals[i + 1];
-  });
+<h2>📅 Planning (backend)</h2>
 
-  document.getElementById("weekTotal").innerText =
-    Object.values(totals).reduce((a,b)=>a+b,0);
-}
+<div class="week-header">
+  <button id="prevWeek">←</button>
+  <strong id="weekLabel">Week 5 (2026)</strong>
+  <button id="nextWeek">→</button>
+</div>
 
-/* ===============================
-   PLUSJE → MODAL
-================================ */
-document.querySelectorAll(".add-btn").forEach(btn => {
-  btn.onclick = async () => {
-    activeDay = btn.closest(".day-column").dataset.day;
+<div class="week-grid">
+  <div class="day-column" data-day="1"><h3>Ma</h3><ul class="day-list"></ul><button class="add-btn">+</button></div>
+  <div class="day-column" data-day="2"><h3>Di</h3><ul class="day-list"></ul><button class="add-btn">+</button></div>
+  <div class="day-column" data-day="3"><h3>Wo</h3><ul class="day-list"></ul><button class="add-btn">+</button></div>
+  <div class="day-column" data-day="4"><h3>Do</h3><ul class="day-list"></ul><button class="add-btn">+</button></div>
+  <div class="day-column" data-day="5"><h3>Vr</h3><ul class="day-list"></ul><button class="add-btn">+</button></div>
+  <div class="day-column" data-day="6"><h3>Za</h3><ul class="day-list"></ul><button class="add-btn">+</button></div>
+  <div class="day-column" data-day="7"><h3>Zo</h3><ul class="day-list"></ul><button class="add-btn">+</button></div>
+</div>
 
-    await loadEmployees(); // ✅ HIER MOET HIJ ZITTEN
-    modal.style.display = "flex";
-  };
-});
+<div class="summary-grid">
+  <div class="summary-cell">0</div><div class="summary-cell">0</div><div class="summary-cell">0</div>
+  <div class="summary-cell">0</div><div class="summary-cell">0</div><div class="summary-cell">0</div>
+  <div class="summary-cell">0</div>
+</div>
 
-/* ===============================
-   MODAL SLUITEN
-================================ */
-closeModalBtn.onclick = () => {
-  modal.style.display = "none";
-  halfDayCheckbox.checked = false;
-  employeeSelect.value = "";
-  activeDay = null;
-};
+<div class="week-total">
+  Totaal aantal shifts: <strong id="weekTotal">0</strong>
+</div>
 
-/* ===============================
-   OPSLAAN SHIFT
-================================ */
-saveShiftBtn.onclick = async () => {
-  if (!activeDay || !employeeSelect.value) return;
+<div class="actions">
+  <button class="primary-btn">Medewerkers inplannen</button>
+  <button class="secondary-btn">Visueel overzicht</button>
+</div>
 
-  const { error } = await supabase
-    .from("planning")
-    .insert({
-      year: currentYear,
-      week_number: currentWeek,
-      day_of_week: Number(activeDay),
-      employee_id: employeeSelect.value,
-      half_day: halfDayCheckbox.checked
-    });
+<!-- MODAL -->
+<div id="planModal" class="modal-overlay">
+  <div class="modal">
+    <h3>Medewerker inplannen</h3>
 
-  if (error) {
-    alert("Fout bij opslaan");
-    console.error(error);
-    return;
-  }
+    <label>
+      Medewerker
+      <select id="employeeSelect"></select>
+    </label>
 
-  modal.style.display = "none";
-  halfDayCheckbox.checked = false;
-  employeeSelect.value = "";
-  loadWeek();
-};
+    <label>
+      <input type="checkbox" id="halfDayCheckbox" />
+      Halve dag
+    </label>
 
-<script type="module" src="./planning.js"></script>git
+    <div style="margin-top:16px; display:flex; gap:10px;">
+      <button id="saveShift" class="primary-btn">Opslaan</button>
+      <button id="cancelShift" class="secondary-btn">Annuleren</button>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="./planning.js"></script>
+</body>
+</html>
