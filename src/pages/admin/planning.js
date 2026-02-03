@@ -18,14 +18,13 @@ const modal = document.getElementById("planModal");
 const employeeSelect = document.getElementById("employeeSelect");
 const halfDayCheckbox = document.getElementById("halfDayCheckbox");
 const saveShiftBtn = document.getElementById("saveShift");
-const closeModalBtn = document.getElementById("closeModal");
+const closeModalBtn = document.getElementById("cancelShift"); // ✅ klopt met HTML
 
 /* ===============================
    INIT
 ================================ */
 updateWeekLabel();
 loadWeek();
-loadEmployees();
 
 /* ===============================
    WEEK NAVIGATIE
@@ -55,12 +54,13 @@ function updateWeekLabel() {
 }
 
 /* ===============================
-   MEDEWERKERS LADEN
+   MEDEWERKERS LADEN (SUPABASE)
 ================================ */
 async function loadEmployees() {
   const { data, error } = await supabase
-    .from("employees")
+    .from("medewerkers")           // ✅ JUISTE TABEL
     .select("id, name")
+    .eq("actief", true)
     .order("name");
 
   if (error) {
@@ -68,7 +68,8 @@ async function loadEmployees() {
     return;
   }
 
-  employeeSelect.innerHTML = "";
+  employeeSelect.innerHTML = `<option value="">Kies medewerker</option>`;
+
   data.forEach(emp => {
     const opt = document.createElement("option");
     opt.value = emp.id;
@@ -91,7 +92,7 @@ async function loadWeek() {
       id,
       day_of_week,
       half_day,
-      employees ( name )
+      medewerkers ( name )
     `)
     .eq("year", currentYear)
     .eq("week_number", currentWeek);
@@ -117,7 +118,7 @@ function renderWeek(shifts) {
 
     const li = document.createElement("li");
     li.textContent =
-      shift.employees?.name + (shift.half_day ? " (½)" : "");
+      shift.medewerkers?.name + (shift.half_day ? " (½)" : "");
 
     list.appendChild(li);
   });
@@ -145,14 +146,21 @@ function calculateTotals(shifts) {
    PLUSJE → MODAL
 ================================ */
 document.querySelectorAll(".add-btn").forEach(btn => {
-  btn.onclick = () => {
+  btn.onclick = async () => {
     activeDay = btn.closest(".day-column").dataset.day;
+
+    await loadEmployees(); // ✅ HIER MOET HIJ ZITTEN
     modal.style.display = "flex";
   };
 });
 
+/* ===============================
+   MODAL SLUITEN
+================================ */
 closeModalBtn.onclick = () => {
   modal.style.display = "none";
+  halfDayCheckbox.checked = false;
+  employeeSelect.value = "";
   activeDay = null;
 };
 
@@ -160,7 +168,7 @@ closeModalBtn.onclick = () => {
    OPSLAAN SHIFT
 ================================ */
 saveShiftBtn.onclick = async () => {
-  if (!activeDay) return;
+  if (!activeDay || !employeeSelect.value) return;
 
   const { error } = await supabase
     .from("planning")
@@ -180,5 +188,6 @@ saveShiftBtn.onclick = async () => {
 
   modal.style.display = "none";
   halfDayCheckbox.checked = false;
+  employeeSelect.value = "";
   loadWeek();
 };
