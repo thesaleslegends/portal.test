@@ -18,7 +18,7 @@ const modal = document.getElementById("planModal");
 const employeeSelect = document.getElementById("employeeSelect");
 const halfDayCheckbox = document.getElementById("halfDayCheckbox");
 const saveShiftBtn = document.getElementById("saveShift");
-const closeModalBtn = document.getElementById("closeModal"); // ✅ MATCHT HTML
+const closeModalBtn = document.getElementById("closeModal"); // ✅ FIX
 
 /* ===============================
    INIT
@@ -59,9 +59,11 @@ function updateWeekLabel() {
 async function loadEmployees() {
   const { data, error } = await supabase
     .from("medewerkers")
-    .select("id, name")
+    .select("id, naam")          // ✅ JUISTE KOLOM
     .eq("actief", true)
-    .order("name");
+    .order("naam");
+
+  console.log("Medewerkers:", data);
 
   if (error) {
     console.error("Fout bij laden medewerkers:", error);
@@ -73,7 +75,7 @@ async function loadEmployees() {
   data.forEach(emp => {
     const opt = document.createElement("option");
     opt.value = emp.id;
-    opt.textContent = emp.name;
+    opt.textContent = emp.naam; // ✅
     employeeSelect.appendChild(opt);
   });
 }
@@ -92,7 +94,7 @@ async function loadWeek() {
       id,
       day_of_week,
       half_day,
-      medewerkers ( name )
+      medewerkers ( naam )
     `)
     .eq("year", currentYear)
     .eq("week_number", currentWeek);
@@ -118,7 +120,7 @@ function renderWeek(shifts) {
 
     const li = document.createElement("li");
     li.textContent =
-      shift.medewerkers?.name + (shift.half_day ? " (½)" : "");
+      shift.medewerkers?.naam + (shift.half_day ? " (½)" : "");
 
     list.appendChild(li);
   });
@@ -148,8 +150,7 @@ function calculateTotals(shifts) {
 document.querySelectorAll(".add-btn").forEach(btn => {
   btn.onclick = async () => {
     activeDay = btn.closest(".day-column").dataset.day;
-
-    await loadEmployees();      // ✅ HIER HOORT HIJ
+    await loadEmployees(); // ✅ BELANGRIJK
     modal.style.display = "flex";
   };
 });
