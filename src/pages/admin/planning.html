@@ -136,6 +136,15 @@
       padding: 6px;
       margin-top: 4px;
     }
+    .modal-overlay {
+  pointer-events: auto;
+}
+
+.modal {
+  pointer-events: auto;
+  position: relative;
+  z-index: 1000;
+}
   </style>
 </head>
 
@@ -190,8 +199,8 @@
     </label>
 
     <div style="margin-top:16px; display:flex; gap:10px;">
-      <button id="saveShift" class="primary-btn">Opslaan</button>
-      <button id="cancelShift" class="secondary-btn">Annuleren</button>
+     <button type="button" id="saveShift" class="primary-btn">Opslaan</button>
+     <button type="button" id="cancelShift" class="secondary-btn">Annuleren</button>
     </div>
   </div>
 </div>
