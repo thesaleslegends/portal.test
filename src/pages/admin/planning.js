@@ -18,14 +18,13 @@ const modal = document.getElementById("planModal");
 const employeeSelect = document.getElementById("employeeSelect");
 const halfDayCheckbox = document.getElementById("halfDayCheckbox");
 const saveShiftBtn = document.getElementById("saveShift");
-const closeModalBtn = document.getElementById("closeModal");
+const closeModalBtn = document.getElementById("closeModal"); // ✅ MATCHT HTML
 
 /* ===============================
    INIT
 ================================ */
 updateWeekLabel();
 loadWeek();
-loadEmployees();
 
 /* ===============================
    WEEK NAVIGATIE
@@ -55,7 +54,7 @@ function updateWeekLabel() {
 }
 
 /* ===============================
-   MEDEWERKERS LADEN
+   MEDEWERKERS LADEN (SUPABASE)
 ================================ */
 async function loadEmployees() {
   const { data, error } = await supabase
@@ -69,7 +68,8 @@ async function loadEmployees() {
     return;
   }
 
-  employeeSelect.innerHTML = "";
+  employeeSelect.innerHTML = `<option value="">Kies medewerker</option>`;
+
   data.forEach(emp => {
     const opt = document.createElement("option");
     opt.value = emp.id;
@@ -146,12 +146,17 @@ function calculateTotals(shifts) {
    PLUSJE → MODAL
 ================================ */
 document.querySelectorAll(".add-btn").forEach(btn => {
-  btn.onclick = () => {
+  btn.onclick = async () => {
     activeDay = btn.closest(".day-column").dataset.day;
+
+    await loadEmployees();      // ✅ HIER HOORT HIJ
     modal.style.display = "flex";
   };
 });
 
+/* ===============================
+   MODAL SLUITEN
+================================ */
 closeModalBtn.onclick = () => {
   modal.style.display = "none";
   halfDayCheckbox.checked = false;
