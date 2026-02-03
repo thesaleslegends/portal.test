@@ -18,7 +18,8 @@ const modal = document.getElementById("planModal");
 const employeeSelect = document.getElementById("employeeSelect");
 const halfDayCheckbox = document.getElementById("halfDayCheckbox");
 const saveShiftBtn = document.getElementById("saveShift");
-const closeModalBtn = document.getElementById("closeModal"); // ✅ FIX
+const closeModalBtn = document.getElementById("cancelShift");
+
 
 /* ===============================
    INIT
