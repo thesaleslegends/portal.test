@@ -115,6 +115,36 @@
       border-radius: 6px;
       cursor: pointer;
     }
+
+    /* ===== MODAL ===== */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+    }
+
+    .modal {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      width: 320px;
+    }
+
+    .modal label {
+      display: block;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+
+    .modal select {
+      width: 100%;
+      padding: 6px;
+      margin-top: 4px;
+    }
   </style>
 </head>
 
@@ -198,6 +228,28 @@
     <button id="openVisual" class="secondary-btn">
       Visueel overzicht
     </button>
+  </div>
+
+  <!-- ===== MODAL ===== -->
+  <div id="planModal" class="modal-overlay">
+    <div class="modal">
+      <h3>Medewerker inplannen</h3>
+
+      <label>
+        Medewerker
+        <select id="employeeSelect"></select>
+      </label>
+
+      <label>
+        <input type="checkbox" id="halfDayCheckbox" />
+        Halve dag
+      </label>
+
+      <div style="margin-top:16px; display:flex; gap:10px;">
+        <button id="saveShift" class="primary-btn">Opslaan</button>
+        <button id="closeModal" class="secondary-btn">Annuleren</button>
+      </div>
+    </div>
   </div>
 
   <script type="module" src="./planning.js"></script>
