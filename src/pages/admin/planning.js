@@ -230,3 +230,68 @@ confirmDeleteBtn.onclick = async () => {
   shiftToDelete = null;
   loadWeek();
 };
+async function loadFixedDaysForWeek() {
+  // 1. Haal alle actieve medewerkers met vaste dagen
+  const { data: employees, error } = await supabase
+    .from("medewerkers")
+    .select("id, vaste_dagen")
+    .eq("actief", true)
+    .not("vaste_dagen", "is", null);
+
+  if (error) {
+    console.error("Fout bij laden vaste dagen:", error);
+    return;
+  }
+
+  // 2. Haal bestaande shifts op (om dubbels te voorkomen)
+  const { data: existingShifts } = await supabase
+    .from("planning")
+    .select("employee_id, day_of_week")
+    .eq("year", currentYear)
+    .eq("week_number", currentWeek);
+
+  const existingMap = new Set(
+    existingShifts.map(s => `${s.employee_id}-${s.day_of_week}`)
+  );
+
+  // 3. Bouw nieuwe shifts
+  const newShifts = [];
+
+  employees.forEach(emp => {
+    emp.vaste_dagen.forEach(day => {
+      const key = `${emp.id}-${day}`;
+      if (!existingMap.has(key)) {
+        newShifts.push({
+          year: currentYear,
+          week_number: currentWeek,
+          day_of_week: day,
+          employee_id: emp.id,
+          half_day: false
+        });
+      }
+    });
+  });
+
+  if (newShifts.length === 0) {
+    alert("Geen nieuwe vaste dagen om in te plannen");
+    return;
+  }
+
+  // 4. Insert in planning
+  const { error: insertError } = await supabase
+    .from("planning")
+    .insert(newShifts);
+
+  if (insertError) {
+    console.error("Fout bij invoegen vaste dagen:", insertError);
+    alert("Fout bij invoegen vaste dagen");
+    return;
+  }
+
+  loadWeek();
+}
+const loadFixedDaysBtn = document.getElementById("loadFixedDays");
+
+if (loadFixedDaysBtn) {
+  loadFixedDaysBtn.onclick = loadFixedDaysForWeek;
+}
