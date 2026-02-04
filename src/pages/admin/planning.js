@@ -6,6 +6,7 @@ import { supabase } from "../../services/supabase.js";
 let currentYear = 2026;
 let currentWeek = 5;
 let activeDay = null;
+let shiftToDelete = null;
 
 /* ===============================
    DOM
@@ -20,6 +21,10 @@ const halfDayCheckbox = document.getElementById("halfDayCheckbox");
 const saveShiftBtn = document.getElementById("saveShift");
 const closeModalBtn = document.getElementById("cancelShift");
 
+/* DELETE MODAL */
+const deleteModal = document.getElementById("deleteModal");
+const confirmDeleteBtn = document.getElementById("confirmDelete");
+const cancelDeleteBtn = document.getElementById("cancelDelete");
 
 /* ===============================
    INIT
@@ -55,16 +60,14 @@ function updateWeekLabel() {
 }
 
 /* ===============================
-   MEDEWERKERS LADEN (SUPABASE)
+   MEDEWERKERS LADEN
 ================================ */
 async function loadEmployees() {
   const { data, error } = await supabase
     .from("medewerkers")
-    .select("id, naam")          // ✅ JUISTE KOLOM
+    .select("id, naam")
     .eq("actief", true)
     .order("naam");
-
-  console.log("Medewerkers:", data);
 
   if (error) {
     console.error("Fout bij laden medewerkers:", error);
@@ -76,7 +79,7 @@ async function loadEmployees() {
   data.forEach(emp => {
     const opt = document.createElement("option");
     opt.value = emp.id;
-    opt.textContent = emp.naam; // ✅
+    opt.textContent = emp.naam;
     employeeSelect.appendChild(opt);
   });
 }
@@ -110,7 +113,7 @@ async function loadWeek() {
 }
 
 /* ===============================
-   RENDEREN
+   RENDER WEEK
 ================================ */
 function renderWeek(shifts) {
   shifts.forEach(shift => {
@@ -122,6 +125,13 @@ function renderWeek(shifts) {
     const li = document.createElement("li");
     li.textContent =
       shift.medewerkers?.naam + (shift.half_day ? " (½)" : "");
+
+    /* 👇 KLIKBAAR → VERWIJDER MODAL */
+    li.style.cursor = "pointer";
+    li.onclick = () => {
+      shiftToDelete = shift.id;
+      deleteModal.style.display = "flex";
+    };
 
     list.appendChild(li);
   });
@@ -151,7 +161,7 @@ function calculateTotals(shifts) {
 document.querySelectorAll(".add-btn").forEach(btn => {
   btn.onclick = async () => {
     activeDay = btn.closest(".day-column").dataset.day;
-    await loadEmployees(); // ✅ BELANGRIJK
+    await loadEmployees();
     modal.style.display = "flex";
   };
 });
@@ -191,5 +201,32 @@ saveShiftBtn.onclick = async () => {
   modal.style.display = "none";
   halfDayCheckbox.checked = false;
   employeeSelect.value = "";
+  loadWeek();
+};
+
+/* ===============================
+   DELETE MODAL
+================================ */
+cancelDeleteBtn.onclick = () => {
+  deleteModal.style.display = "none";
+  shiftToDelete = null;
+};
+
+confirmDeleteBtn.onclick = async () => {
+  if (!shiftToDelete) return;
+
+  const { error } = await supabase
+    .from("planning")
+    .delete()
+    .eq("id", shiftToDelete);
+
+  if (error) {
+    alert("Fout bij verwijderen");
+    console.error(error);
+    return;
+  }
+
+  deleteModal.style.display = "none";
+  shiftToDelete = null;
   loadWeek();
 };
