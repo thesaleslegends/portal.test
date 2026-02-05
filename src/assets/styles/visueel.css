@@ -1,0 +1,95 @@
+/* RESET */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+}
+
+/* ACHTERGROND */
+body {
+  min-height: 100vh;
+  background: url("../images/bg-red.png") center / cover no-repeat fixed;
+  color: white;
+  padding-bottom: 60px;
+}
+
+/* LOGO */
+.tsl-header {
+  display: flex;
+  justify-content: center;
+  margin: 80px 0 50px; /* veel meer ruimte */
+}
+
+.tsl-logo {
+  height: 220px;              /* 🔥 HIER zit de winst */
+  max-width: 95%;
+  filter:
+    drop-shadow(0 0 60px rgba(255, 0, 0, 0.9))
+    drop-shadow(0 0 120px rgba(255, 0, 0, 0.6));
+}
+
+/* TITEL (mag blijven bestaan, maar standaard onzichtbaar) */
+#weekTitle {
+  display: none;
+}
+
+/* GRID */
+#planningGrid {
+  display: grid;
+
+  /* 1 rij voor headers, rest voor content */
+  grid-template-columns: repeat(7, 1fr);
+  grid-auto-rows: min-content;   /* ⬅️ KEY FIX */
+  
+  max-width: 1200px;
+  margin: 0 auto 60px;
+  border: 2px solid #ff2a2a;
+  border-radius: 16px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.55);
+  box-shadow: 0 0 40px rgba(255, 0, 0, 0.4);
+}
+
+/* CEL */
+.cell {
+  border-right: 1px solid rgba(255, 42, 42, 0.45);
+  border-top: 1px solid rgba(255, 42, 42, 0.45);
+  padding: 14px;
+  min-height: 120px;
+}
+
+/* HEADER */
+/* HEADER */
+.cell.header {
+  background: rgba(255, 42, 42, 0.2);
+  font-weight: bold;
+  text-align: center;
+
+  padding: 8px 6px;     /* ⬅️ was te groot */
+  min-height: 48px;     /* ⬅️ veel compacter */
+  font-size: 15px;
+}
+
+/* NAAM IN DAG */
+.name-cell {
+  margin: 8px 0;
+  padding: 7px 10px;
+
+  background: linear-gradient(
+    145deg,
+    rgba(255, 0, 0, 0.35),
+    rgba(120, 0, 0, 0.35)
+  );
+
+  border: 1px solid rgba(255, 80, 80, 0.8);
+  border-radius: 10px;
+
+  font-size: 14px;
+  text-align: center;
+  font-weight: 500;
+
+  box-shadow:
+    0 0 12px rgba(255, 0, 0, 0.45),
+    inset 0 0 6px rgba(255, 255, 255, 0.08);
+}

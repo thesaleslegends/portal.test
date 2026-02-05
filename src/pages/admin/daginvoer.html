@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <title>Dag invoer – The Sales Legends</title>
+
+  <!-- Styling -->
+  <link rel="stylesheet" href="../../assets/styles/daginvoer.css">
+</head>
+
+<body>
+
+  <!-- HEADER -->
+  <header class="page-header">
+    <h2>Dag invoer – MINIMUM</h2>
+
+    <div class="date-field">
+      <label for="dagDatum">Datum</label>
+      <input type="date" id="dagDatum" />
+    </div>
+  </header>
+
+  <!-- REGELS -->
+  <section class="day-input">
+
+    <!-- Dynamische regels (JS vult dit) -->
+    <div id="regels"></div>
+
+    <!-- ACTIES -->
+    <div class="actions">
+      <button
+        id="addRow"
+        class="secondary-btn"
+        type="button"
+      >
+        Regel toevoegen
+      </button>
+
+      <button
+        id="opslaanDag"
+        class="primary-btn"
+        type="button"
+      >
+        Opslaan
+      </button>
+    </div>
+
+  </section>
+
+  <!-- SCRIPT -->
+  <script type="module" src="./daginvoer.v2.js"></script>
+
+</body>
+</html>

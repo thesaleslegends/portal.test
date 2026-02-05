@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // 📅 Dag invoer
   document.getElementById("daginvoer")?.addEventListener("click", () => {
-    window.location.href = "../daginvoer/dag.html";
+    window.location.href = "./daginvoer.html";
   });
 
   // 🗓 Planning (FIX)

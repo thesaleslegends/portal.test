@@ -1,6 +1,24 @@
 import { supabase } from "../../services/supabase.js";
 
 /* ===============================
+   HELPERS
+================================ */
+function getDateFromWeek(year, week, dayOfWeek) {
+  const firstThursday = new Date(year, 0, 4);
+  const firstWeekStart = new Date(firstThursday);
+  firstWeekStart.setDate(
+    firstThursday.getDate() - ((firstThursday.getDay() + 6) % 7)
+  );
+
+  const date = new Date(firstWeekStart);
+  date.setDate(
+    firstWeekStart.getDate() + (week - 1) * 7 + (dayOfWeek - 1)
+  );
+
+  return date.toISOString().split("T")[0];
+}
+
+/* ===============================
    WEEK STATE
 ================================ */
 let currentYear = 2026;
@@ -21,7 +39,6 @@ const halfDayCheckbox = document.getElementById("halfDayCheckbox");
 const saveShiftBtn = document.getElementById("saveShift");
 const closeModalBtn = document.getElementById("cancelShift");
 
-/* DELETE MODAL */
 const deleteModal = document.getElementById("deleteModal");
 const confirmDeleteBtn = document.getElementById("confirmDelete");
 const cancelDeleteBtn = document.getElementById("cancelDelete");
@@ -70,7 +87,7 @@ async function loadEmployees() {
     .order("naam");
 
   if (error) {
-    console.error("Fout bij laden medewerkers:", error);
+    console.error(error);
     return;
   }
 
@@ -104,7 +121,7 @@ async function loadWeek() {
     .eq("week_number", currentWeek);
 
   if (error) {
-    console.error("Fout bij laden planning:", error);
+    console.error(error);
     return;
   }
 
@@ -126,7 +143,6 @@ function renderWeek(shifts) {
     li.textContent =
       shift.medewerkers?.naam + (shift.half_day ? " (½)" : "");
 
-    /* 👇 KLIKBAAR → VERWIJDER MODAL */
     li.style.cursor = "pointer";
     li.onclick = () => {
       shiftToDelete = shift.id;
@@ -160,7 +176,7 @@ function calculateTotals(shifts) {
 ================================ */
 document.querySelectorAll(".add-btn").forEach(btn => {
   btn.onclick = async () => {
-    activeDay = btn.closest(".day-column").dataset.day;
+    activeDay = Number(btn.closest(".day-column").dataset.day);
     await loadEmployees();
     modal.style.display = "flex";
   };
@@ -177,19 +193,26 @@ closeModalBtn.onclick = () => {
 };
 
 /* ===============================
-   OPSLAAN SHIFT
+   OPSLAAN SHIFT (FIX)
 ================================ */
 saveShiftBtn.onclick = async () => {
   if (!activeDay || !employeeSelect.value) return;
+
+  const datum = getDateFromWeek(
+    currentYear,
+    currentWeek,
+    activeDay
+  );
 
   const { error } = await supabase
     .from("planning")
     .insert({
       year: currentYear,
       week_number: currentWeek,
-      day_of_week: Number(activeDay),
+      day_of_week: activeDay,
+      datum,
       employee_id: employeeSelect.value,
-      half_day: halfDayCheckbox.checked
+      half_day: halfDayCheckbox.checked,
     });
 
   if (error) {
@@ -205,7 +228,7 @@ saveShiftBtn.onclick = async () => {
 };
 
 /* ===============================
-   DELETE MODAL
+   DELETE
 ================================ */
 cancelDeleteBtn.onclick = () => {
   deleteModal.style.display = "none";
@@ -230,20 +253,19 @@ confirmDeleteBtn.onclick = async () => {
   shiftToDelete = null;
   loadWeek();
 };
+
+/* ===============================
+   VASTE DAGEN (FIX)
+================================ */
 async function loadFixedDaysForWeek() {
-  // 1. Haal alle actieve medewerkers met vaste dagen
   const { data: employees, error } = await supabase
     .from("medewerkers")
     .select("id, vaste_dagen")
     .eq("actief", true)
     .not("vaste_dagen", "is", null);
 
-  if (error) {
-    console.error("Fout bij laden vaste dagen:", error);
-    return;
-  }
+  if (error) return console.error(error);
 
-  // 2. Haal bestaande shifts op (om dubbels te voorkomen)
   const { data: existingShifts } = await supabase
     .from("planning")
     .select("employee_id, day_of_week")
@@ -254,7 +276,6 @@ async function loadFixedDaysForWeek() {
     existingShifts.map(s => `${s.employee_id}-${s.day_of_week}`)
   );
 
-  // 3. Bouw nieuwe shifts
   const newShifts = [];
 
   employees.forEach(emp => {
@@ -265,6 +286,7 @@ async function loadFixedDaysForWeek() {
           year: currentYear,
           week_number: currentWeek,
           day_of_week: day,
+          datum: getDateFromWeek(currentYear, currentWeek, day),
           employee_id: emp.id,
           half_day: false
         });
@@ -272,26 +294,23 @@ async function loadFixedDaysForWeek() {
     });
   });
 
-  if (newShifts.length === 0) {
-    alert("Geen nieuwe vaste dagen om in te plannen");
-    return;
-  }
+  if (newShifts.length === 0) return;
 
-  // 4. Insert in planning
   const { error: insertError } = await supabase
     .from("planning")
     .insert(newShifts);
 
-  if (insertError) {
-    console.error("Fout bij invoegen vaste dagen:", insertError);
-    alert("Fout bij invoegen vaste dagen");
-    return;
-  }
+  if (insertError) return console.error(insertError);
 
   loadWeek();
 }
-const loadFixedDaysBtn = document.getElementById("loadFixedDays");
 
-if (loadFixedDaysBtn) {
-  loadFixedDaysBtn.onclick = loadFixedDaysForWeek;
+const loadFixedDaysBtn = document.getElementById("loadFixedDays");
+if (loadFixedDaysBtn) loadFixedDaysBtn.onclick = loadFixedDaysForWeek;
+
+const visualBtn = document.getElementById("visualOverview");
+if (visualBtn) {
+  visualBtn.onclick = () => {
+    window.location.href = "/src/pages/admin/visueel.html";
+  };
 }
