@@ -126,7 +126,20 @@ function bouwStats(planning, invoer, medewerkersMap) {
   /* =========================
      SHIFTS (planning)
   ========================= */
-  planning.forEach(p => {
+  const vandaag = new Date();
+vandaag.setHours(0, 0, 0, 0);
+
+planning.forEach(p => {
+
+  const shiftDatum = new Date(p.datum);
+  shiftDatum.setHours(0, 0, 0, 0);
+
+  // 🔥 Alleen shifts van vandaag of verleden
+  if (shiftDatum > vandaag) {
+    return; // toekomst negeren
+  }
+
+  
 
     if (!stats[p.employee_id]) {
       stats[p.employee_id] = {
@@ -141,6 +154,8 @@ function bouwStats(planning, invoer, medewerkersMap) {
 
     stats[p.employee_id].shifts += p.half_day ? 0.5 : 1;
   });
+
+  
 
   /* =========================
      ORDERS

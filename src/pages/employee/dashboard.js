@@ -147,15 +147,39 @@ if (embleemEl && medewerker.functie) {
 
   (shifts || []).forEach(shift => {
 
-    gewerkteDatums.add(shift.datum);
+  const shiftDatum = new Date(shift.datum);
+  const vandaagCheck = new Date();
 
-    const dagloon = shift.half_day
-      ? medewerker.basis_dagloon / 2
-      : medewerker.basis_dagloon;
+  // Maak vandaag zonder tijd
+  const vandaagMiddernacht = new Date();
+  vandaagMiddernacht.setHours(0, 0, 0, 0);
 
-    if (inHuidigeWeek(shift.datum, vandaag)) weekBasis += dagloon;
-    if (inLoonperiode(shift.datum, vandaag)) loonBasis += dagloon;
-  });
+  // Maak 12:00 vandaag
+  const vandaagTwaalf = new Date();
+  vandaagTwaalf.setHours(12, 0, 0, 0);
+
+  // 🔥 Alleen meetellen als:
+  // - datum in verleden ligt
+  // - OF vandaag is EN het is 12:00 of later
+
+  const isVerleden = shiftDatum < vandaagMiddernacht;
+  const isVandaagNa12 =
+    shiftDatum.getTime() === vandaagMiddernacht.getTime() &&
+    vandaagCheck >= vandaagTwaalf;
+
+  if (!isVerleden && !isVandaagNa12) {
+    return; // nog niet meetellen
+  }
+
+  gewerkteDatums.add(shift.datum);
+
+  const dagloon = shift.half_day
+    ? medewerker.basis_dagloon / 2
+    : medewerker.basis_dagloon;
+
+  if (inHuidigeWeek(shift.datum, vandaag)) weekBasis += dagloon;
+  if (inLoonperiode(shift.datum, vandaag)) loonBasis += dagloon;
+});
 
   /* =========================
      BONUS
@@ -240,12 +264,48 @@ Object.values(dagStatistieken).forEach(dag => {
   }
 });
 
-// netto gemiddelde = totaal netto / totaal shifts
-const totaalShifts = (shifts || []).length;
+/* =========================
+   NETTO GEMIDDELDE (CORRECT + GEEN TOEKOMST)
+========================= */
 
-const nettoGemiddelde = totaalShifts > 0
-  ? (totaalNetto / totaalShifts).toFixed(2)
-  : 0;
+const vandaagMiddernachtGem = new Date();
+vandaagMiddernachtGem.setHours(0, 0, 0, 0);
+
+// 🔥 Alle planning ophalen met half_day
+const { data: alleShifts } = await supabase
+  .from("planning")
+  .select("datum, half_day")
+  .eq("employee_id", medewerker.id);
+
+let totaalShiftsAlleTijd = 0;
+
+(alleShifts || []).forEach(shift => {
+  const shiftDatum = new Date(shift.datum);
+
+  // alleen vandaag en verleden
+  if (shiftDatum <= vandaagMiddernachtGem) {
+    totaalShiftsAlleTijd += shift.half_day ? 0.5 : 1;
+  }
+});
+
+// 🔥 Alle netto orders ooit ophalen
+const { data: alleDagen } = await supabase
+  .from("dag_invoer")
+  .select("status")
+  .eq("employee_id", medewerker.id);
+
+let totaalNettoAlleTijd = 0;
+
+(alleDagen || []).forEach(d => {
+  if (d.status?.trim().toLowerCase() === "netto") {
+    totaalNettoAlleTijd += 1;
+  }
+});
+
+const nettoGemiddelde =
+  totaalShiftsAlleTijd > 0
+    ? (totaalNettoAlleTijd / totaalShiftsAlleTijd).toFixed(2)
+    : "0.00";
 
 // output naar DOM
 if (hoogsteNettoEl) hoogsteNettoEl.textContent = hoogsteNetto;
