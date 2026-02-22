@@ -1,4 +1,4 @@
-import { supabase } from "src/services/supabase.js";
+import { supabase } from "../../services/supabase.js";
 
 /* =========================
    HELPERS
