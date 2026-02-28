@@ -54,7 +54,7 @@ body {
 }
 
 .topbar-logo {
-  height: 10px;
+  height: 55px;
   width: auto;
   object-fit: contain;
   filter: drop-shadow(0 0 12px rgba(255, 90, 90, 0.7));
