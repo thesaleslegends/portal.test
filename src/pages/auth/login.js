@@ -31,19 +31,5 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // TEMP: geen roles → altijd naar employee dashboard
-window.location.href = "../employee/dashboard.html";
-return;
-
-    // 🔍 Haal user opnieuw op voor role-based redirect
-    const { data: { user } } = await supabase.auth.getUser();
-
-    const role = user?.user_metadata?.role;
-
-    if (role === "admin") {
-      window.location.href = "../admin/dashboard.html";
-    } else {
-      window.location.href = "../employee/dashboard.html";
-    }
   });
 });
